@@ -1,9 +1,15 @@
 # PRÁCTICA FINAL – PERCEPCIÓN Y VISIÓN ARTIFICIAL
-## Sistema para resolver Cross Math Grid en MATLAB
 
 ---
 
-## 1. Descripción del proyecto
+## Tabla de contenidos
+
+1. [Requerimientos oficiales](#1-requerimientos-oficiales)  
+2. [Estructura del repositorio](#2-estructura-del-repositorio)  
+3. [Planificación resumida](#3-planificación-resumida)  
+4. [Explicación de carpetas y archivos](#4-explicación-de-carpetas-y-archivos)
+
+---
 
 Este proyecto corresponde a la práctica final de la asignatura de Percepción y consiste en desarrollar un sistema capaz de reconocer, interpretar y validar rompecabezas tipo **Cross Math Grid** mediante técnicas de visión artificial. El sistema debe capturar la cuadrícula desde una cámara, identificar números, operadores, signos de igualdad y casillas especiales, y permitir que el usuario introduzca valores faltantes mediante voz o tarjetas impresas. Finalmente, el sistema debe comprobar si las operaciones horizontales y verticales del tablero son correctas.
 
@@ -11,7 +17,7 @@ El proyecto incluye todos los componentes necesarios: detección de la cuadrícu
 
 ---
 
-## 2. Requerimientos oficiales
+## 1. Requerimientos oficiales
 
 Los requisitos establecidos para la práctica son los siguientes:
 
@@ -40,7 +46,7 @@ Los requisitos establecidos para la práctica son los siguientes:
 
 ---
 
-## 3. Estructura del repositorio
+## 2. Estructura del repositorio
 
 ```text
 Proyecto-CrossMath/
@@ -106,9 +112,11 @@ Proyecto-CrossMath/
 └── video/
     └── demostracion.mp4               # Vídeo de demostración
 
+```
+
 ---
 
-## 4. Planificación resumida
+## 3. Planificación resumida
 
 **Semana 1:** Captura de imagen, preprocesamiento y detección de cuadrícula.  
 **Semana 2:** Segmentación de celdas y reconocimiento de símbolos.  
@@ -119,7 +127,7 @@ Proyecto-CrossMath/
 
 ---
 
-## 5. Explicación de carpetas y archivos
+## 4. Explicación de carpetas y archivos
 
 **configuracion/**  
 Contiene parámetros de cámara, ajustes de OCR y configuraciones generales del sistema.
