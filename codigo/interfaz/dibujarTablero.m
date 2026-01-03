@@ -35,7 +35,4 @@ function dibujarTablero(tablero)
 
     hold off;
     drawnow;
-    if nargin == 0
-        close(figura);
-    end
 end

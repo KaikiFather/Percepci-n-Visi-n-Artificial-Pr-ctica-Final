@@ -1,22 +1,20 @@
 function [recorte, bbox] = detectarCuadricula(preprocesado)
 %DETECTARCUADRICULA Detecta la región principal de la cuadrícula.
 %   [recorte, bbox] = detectarCuadricula(preprocesado)
-%   preprocesado puede ser una imagen o una estructura de preprocesado.
+%   preprocesado debe ser una estructura de preprocesado con campos:
+%       - gray: imagen en escala de grises
+%       - binaria: imagen binaria procesada
 
     if nargin < 1
-        error('Se requiere una imagen o estructura de preprocesado.');
+        error('Se requiere una estructura de preprocesado.');
     end
 
-    if isstruct(preprocesado)
-        gray = preprocesado.gray;
-        binaria = preprocesado.binaria;
-    else
-        gray = im2gray(preprocesado);
-        binaria = imbinarize(gray, 'adaptive', ...
-            'ForegroundPolarity', 'dark', 'Sensitivity', 0.45);
-        binaria = imcomplement(binaria);
-        binaria = imfill(binaria, 'holes');
+    if ~isstruct(preprocesado)
+        error('El argumento preprocesado debe ser una estructura con campos gray y binaria.');
     end
+
+    gray = preprocesado.gray;
+    binaria = preprocesado.binaria;
 
     regiones = regionprops(binaria, 'Area', 'BoundingBox');
     if isempty(regiones)

@@ -12,8 +12,14 @@ function resultado = reconocerCelda(imagen, plantillasNumero, plantillasOperador
     imagenGray = im2gray(imagen);
     imagenGray = im2double(imagenGray);
 
+    % Umbral de brillo para considerar una celda como vacía.
+    % En imágenes convertidas con im2double, 1.0 es blanco puro.
+    % El valor 0.9 se ha seleccionado empíricamente para las
+    % condiciones típicas de iluminación y puede ajustarse si es necesario.
+    umbralCeldaVacia = 0.9;
+
     nivelOscuro = mean(imagenGray(:));
-    if nivelOscuro > 0.9
+    if nivelOscuro > umbralCeldaVacia
         resultado = struct('tipo', 'vacio', 'valor', '', 'puntuacion', 0);
         return;
     end

@@ -11,6 +11,12 @@ function [esValido, mensaje] = validarMovimiento(tablero, movimiento)
         return;
     end
 
+    % Validar que movimiento tiene los campos requeridos
+    if ~isfield(movimiento, 'fila') || ~isfield(movimiento, 'columna') || ~isfield(movimiento, 'valor')
+        mensaje = 'El movimiento no tiene los campos requeridos (fila, columna, valor).';
+        return;
+    end
+
     filas = size(tablero.grid, 1);
     cols = size(tablero.grid, 2);
 
@@ -21,8 +27,9 @@ function [esValido, mensaje] = validarMovimiento(tablero, movimiento)
     end
 
     valor = movimiento.valor;
-    if isempty(valor) || ~all(isstrprop(valor, 'digit'))
-        mensaje = 'El valor debe ser numérico.';
+    allowedChars = '0123456789+-*/=';
+    if isempty(valor) || ~all(ismember(valor, allowedChars))
+        mensaje = 'El valor solo puede contener números y los operadores +, -, *, /, =.';
         return;
     end
 
