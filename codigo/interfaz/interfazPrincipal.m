@@ -8,17 +8,22 @@ function interfazPrincipal()
         ruta = fullfile('ejemplos', 'ejemplo_5x5.jpg');
     end
 
-    [imagen, origen] = capturarCuadricula(ruta);
-    fprintf('Imagen cargada desde: %s\n', origen);
+    try
+        [imagen, origen] = capturarCuadricula(ruta);
+        fprintf('Imagen cargada desde: %s\n', origen);
 
-    pre = preprocesarImagen(imagen);
-    [recorte, ~] = detectarCuadricula(pre);
+        pre = preprocesarImagen(imagen);
+        [recorte, ~] = detectarCuadricula(pre);
 
-    [lineasFilas, lineasColumnas] = detectarBordesCeldas(recorte);
-    celdas = segmentarCeldas(recorte, lineasFilas, lineasColumnas);
+        [lineasFilas, lineasColumnas] = detectarBordesCeldas(recorte);
+        celdas = segmentarCeldas(recorte, lineasFilas, lineasColumnas);
 
-    tablero = construirTablero(celdas);
-    dibujarTablero(tablero);
+        tablero = construirTablero(celdas);
+        dibujarTablero(tablero);
+    catch ME
+        fprintf('Error durante el procesamiento de la imagen: %s\n', ME.message);
+        return;
+    end
 
     while true
         fprintf('\nOpciones: [v]oz, [t]arjeta, [c]omprobar, [s]alir\n');

@@ -16,10 +16,28 @@ function celdas = segmentarCeldas(img, lineasFilas, lineasColumnas, offset)
         celdas = cell(filas, cols);
         for r = 1:filas
             for c = 1:cols
-                x1 = lineasColumnas(c) + offset;
-                x2 = lineasColumnas(c+1) - offset;
-                y1 = lineasFilas(r) + offset;
-                y2 = lineasFilas(r+1) - offset;
+                % Calcular las dimensiones base de la celda
+                cellWidth = lineasColumnas(c+1) - lineasColumnas(c);
+                cellHeight = lineasFilas(r+1) - lineasFilas(r);
+
+                % Limitar el offset para que no exceda la mitad de la celda
+                maxOffsetX = floor((cellWidth - 1) / 2);
+                maxOffsetY = floor((cellHeight - 1) / 2);
+
+                effectiveOffsetX = min(offset, maxOffsetX);
+                effectiveOffsetY = min(offset, maxOffsetY);
+
+                % Avisar si el offset solicitado es demasiado grande y ha sido reducido
+                if effectiveOffsetX < offset || effectiveOffsetY < offset
+                    warning('segmentarCeldas:OffsetTooLarge', ...
+                        'Offset reducido de %g a (%g, %g) en la celda (fila %d, columna %d).', ...
+                        offset, effectiveOffsetX, effectiveOffsetY, r, c);
+                end
+
+                x1 = lineasColumnas(c) + effectiveOffsetX;
+                x2 = lineasColumnas(c+1) - effectiveOffsetX;
+                y1 = lineasFilas(r) + effectiveOffsetY;
+                y2 = lineasFilas(r+1) - effectiveOffsetY;
 
                 w = max(x2 - x1, 1);
                 h = max(y2 - y1, 1);
