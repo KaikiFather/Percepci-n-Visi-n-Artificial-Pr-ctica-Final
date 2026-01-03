@@ -11,6 +11,11 @@ function [esValido, mensaje] = validarMovimiento(tablero, movimiento)
         return;
     end
 
+    if ~isfield(movimiento, 'fila') || ~isfield(movimiento, 'columna') || ~isfield(movimiento, 'valor')
+        mensaje = 'El movimiento no tiene los campos requeridos (fila, columna, valor).';
+        return;
+    end
+
     filas = size(tablero.grid, 1);
     cols = size(tablero.grid, 2);
 
