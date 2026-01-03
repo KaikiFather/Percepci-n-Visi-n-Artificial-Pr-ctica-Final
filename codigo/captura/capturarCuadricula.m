@@ -6,11 +6,18 @@ function [imagen, origen] = capturarCuadricula(entrada)
 
     if nargin < 1 || isempty(entrada)
         if exist('webcam', 'class') == 8 %#ok<EXIST>
-            cam = webcam; %#ok<NASGU>
-            pause(0.2);
-            imagen = snapshot(cam);
-            origen = 'webcam';
-            clear cam;
+            try
+                cam = webcam;
+                pause(0.2);
+                imagen = snapshot(cam);
+                origen = 'webcam';
+                clear cam;
+            catch ME
+                if exist('cam', 'var')
+                    clear cam;
+                end
+                error('No se pudo acceder a la webcam: %s', ME.message);
+            end
         else
             error('No se ha proporcionado imagen y no hay soporte de webcam.');
         end

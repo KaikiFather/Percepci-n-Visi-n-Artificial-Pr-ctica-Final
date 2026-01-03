@@ -1,5 +1,5 @@
 function generarPlantillasTablero(directorioSalida)
-%GENERARPLANTILLASTABLERO Genera templates de tableros en PNG y JPG.
+%GENERARPLANTILLASTABLERO Genera plantillas de tableros en PNG y JPG.
 %   generarPlantillasTablero(directorioSalida)
 %   Genera plantillas para tamaños 5x5, 7x7 y 12x12.
 
@@ -12,9 +12,9 @@ function generarPlantillasTablero(directorioSalida)
     end
 
     tamanos = [5, 7, 12];
-    celda = 80;
-    grosorLinea = 3;
-    margen = 20;
+    celda = 80;          % Tamaño de celda en píxeles, elegido para que el tablero tenga buena resolución para visualización y reconocimiento
+    grosorLinea = 3;     % Grosor de línea en píxeles, suficientemente grueso para ser visible sin ocultar demasiado el contenido de las celdas
+    margen = 20;         % Margen exterior en píxeles alrededor del tablero, evita cortes en los bordes y deja espacio en la imagen final
 
     for idx = 1:numel(tamanos)
         n = tamanos(idx);
@@ -22,9 +22,29 @@ function generarPlantillasTablero(directorioSalida)
         nombreBase = sprintf('tablero_%dx%d', n, n);
         rutaPng = fullfile(directorioSalida, [nombreBase, '.png']);
         rutaJpg = fullfile(directorioSalida, [nombreBase, '.jpg']);
-        imwrite(imagen, rutaPng);
-        imwrite(imagen, rutaJpg, 'Quality', 95);
+        
+        try
+            imwrite(imagen, rutaPng);
+            if exist(rutaPng, 'file') ~= 2
+                error('generarPlantillasTablero:WriteFailed', ...
+                    'No se pudo crear el archivo PNG: %s', rutaPng);
+            end
+            fprintf('Creado: %s\n', rutaPng);
+            
+            imwrite(imagen, rutaJpg, 'Quality', 95);
+            if exist(rutaJpg, 'file') ~= 2
+                error('generarPlantillasTablero:WriteFailed', ...
+                    'No se pudo crear el archivo JPG: %s', rutaJpg);
+            end
+            fprintf('Creado: %s\n', rutaJpg);
+        catch e
+            error('generarPlantillasTablero:WriteError', ...
+                'Error al guardar las plantillas del tablero en "%s" o "%s": %s', ...
+                rutaPng, rutaJpg, e.message);
+        end
     end
+    
+    fprintf('Plantillas generadas exitosamente en: %s\n', directorioSalida);
 end
 
 function imagen = crearTableroVacio(n, tamCelda, grosor, margen)

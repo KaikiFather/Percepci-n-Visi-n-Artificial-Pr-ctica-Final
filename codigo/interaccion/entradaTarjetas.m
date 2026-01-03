@@ -7,9 +7,34 @@ function movimiento = entradaTarjetas(tamano)
     end
 
     fprintf('Entrada por tarjetas simulada.\n');
-    fila = input(sprintf('Fila (1-%d): ', tamano(1)));
-    columna = input(sprintf('Columna (1-%d): ', tamano(2)));
-    valor = input('Valor numérico: ', 's');
+    
+    % Leer y validar fila como entrada numérica
+    filaValida = false;
+    while ~filaValida
+        filaStr = input(sprintf('Fila (1-%d): ', tamano(1)), 's');
+        filaNum = str2double(filaStr);
+        if ~isempty(filaStr) && ~isnan(filaNum)
+            fila = filaNum;
+            filaValida = true;
+        else
+            fprintf('Por favor, introduzca un valor numérico válido para la fila.\n');
+        end
+    end
+
+    % Leer y validar columna como entrada numérica
+    columnaValida = false;
+    while ~columnaValida
+        columnaStr = input(sprintf('Columna (1-%d): ', tamano(2)), 's');
+        columnaNum = str2double(columnaStr);
+        if ~isempty(columnaStr) && ~isnan(columnaNum)
+            columna = columnaNum;
+            columnaValida = true;
+        else
+            fprintf('Por favor, introduzca un valor numérico válido para la columna.\n');
+        end
+    end
+    
+    valor = input('Valor (número u operador): ', 's');
 
     movimiento = struct('fila', fila, 'columna', columna, 'valor', valor, 'origen', 'tarjeta');
 end
