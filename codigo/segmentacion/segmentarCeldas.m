@@ -14,6 +14,7 @@ function celdas = segmentarCeldas(img, lineasFilas, lineasColumnas, offset)
         filas = numel(lineasFilas) - 1;
         cols = numel(lineasColumnas) - 1;
         celdas = cell(filas, cols);
+        warningIssued = false; % Flag para evitar advertencias duplicadas
         for r = 1:filas
             for c = 1:cols
                 % Calcular las dimensiones base de la celda
@@ -27,11 +28,12 @@ function celdas = segmentarCeldas(img, lineasFilas, lineasColumnas, offset)
                 effectiveOffsetX = min(offset, maxOffsetX);
                 effectiveOffsetY = min(offset, maxOffsetY);
 
-                % Avisar si el offset solicitado es demasiado grande y ha sido reducido
-                if effectiveOffsetX < offset || effectiveOffsetY < offset
+                % Avisar si el offset solicitado es demasiado grande (solo una vez)
+                if ~warningIssued && (effectiveOffsetX < offset || effectiveOffsetY < offset)
                     warning('segmentarCeldas:OffsetTooLarge', ...
-                        'Offset reducido de %g a (%g, %g) en la celda (fila %d, columna %d).', ...
-                        offset, effectiveOffsetX, effectiveOffsetY, r, c);
+                        'Offset solicitado (%g) excede la mitad del tamaño de celda en algunas celdas. Se ha reducido automáticamente.', ...
+                        offset);
+                    warningIssued = true;
                 end
 
                 x1 = lineasColumnas(c) + effectiveOffsetX;
