@@ -11,7 +11,7 @@ function [esValido, mensaje] = validarMovimiento(tablero, movimiento)
         return;
     end
 
-    if ~isfield(movimiento, 'fila') || ~isfield(movimiento, 'columna') || ~isfield(movimiento, 'valor')
+    if ~all(isfield(movimiento, {'fila', 'columna', 'valor'}))
         mensaje = 'El movimiento no tiene los campos requeridos (fila, columna, valor).';
         return;
     end
