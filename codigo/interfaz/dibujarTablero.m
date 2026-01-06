@@ -1,6 +1,10 @@
-function dibujarTablero(tablero)
+function dibujarTablero(tablero, resaltado)
 %DIBUJARTABLERO Dibuja la cuadrícula en una figura.
-%   dibujarTablero(tablero)
+%   resaltado puede contener campos filas y columnas con índices a marcar.
+
+    if nargin < 2
+        resaltado = struct();
+    end
 
     if ~isfield(tablero, 'grid')
         error('El tablero no tiene el campo grid.');
@@ -10,10 +14,22 @@ function dibujarTablero(tablero)
     filas = size(grid, 1);
     cols = size(grid, 2);
 
-    figura = figure('Name', 'Cross Math Grid', 'NumberTitle', 'off');
+    figure('Name', 'Cross Math Grid', 'NumberTitle', 'off');
     axis([0 cols 0 filas]);
     axis equal off;
     hold on;
+
+    % Colorear celdas con errores
+    if isfield(resaltado, 'filas')
+        for f = resaltado.filas
+            rectangle('Position', [0 filas-f  cols 1], 'FaceColor', [1 0.8 0.8], 'EdgeColor', 'none');
+        end
+    end
+    if isfield(resaltado, 'columnas')
+        for c = resaltado.columnas
+            rectangle('Position', [c-1 0 1 filas], 'FaceColor', [1 0.8 0.8], 'EdgeColor', 'none');
+        end
+    end
 
     for r = 0:filas
         plot([0, cols], [r, r], 'k');
