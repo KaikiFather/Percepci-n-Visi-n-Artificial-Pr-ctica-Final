@@ -9,14 +9,17 @@ function resultado = preprocesarImagen(imagen)
 
     gray = im2gray(imagen);
     gray = im2double(gray);
+    gray = adapthisteq(gray, 'ClipLimit', 0.02);
     gray = imgaussfilt(gray, 1);
 
+    % Mejorar contraste de líneas de rejilla
     binaria = imbinarize(gray, 'adaptive', ...
-        'ForegroundPolarity', 'dark', 'Sensitivity', 0.45);
+        'ForegroundPolarity', 'dark', 'Sensitivity', 0.5);
     binaria = imcomplement(binaria);
+    binaria = bwareaopen(binaria, 50);
     binaria = imfill(binaria, 'holes');
 
-    bordes = edge(gray, 'Canny');
+    bordes = edge(gray, 'Canny', [0.05 0.2]);
 
     resultado = struct('gray', gray, 'binaria', binaria, 'bordes', bordes);
 end

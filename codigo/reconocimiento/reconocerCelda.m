@@ -1,6 +1,7 @@
 function resultado = reconocerCelda(imagen, plantillasNumero, plantillasOperador)
-%RECONOCERCELDA Clasifica una celda como número, operador o vacía.
+%RECONOCERCELDA Clasifica una celda como negra, vacía, número u operador.
 %   resultado = reconocerCelda(imagen, plantillasNumero, plantillasOperador)
+%   Devuelve struct con campos: tipo, valor, puntuacion.
 
     if nargin < 2
         plantillasNumero = {};
@@ -9,43 +10,37 @@ function resultado = reconocerCelda(imagen, plantillasNumero, plantillasOperador
         plantillasOperador = {};
     end
 
-    imagenGray = im2gray(imagen);
-    imagenGray = im2double(imagenGray);
+    imgGray = im2double(im2gray(imagen));
+    imgGray = imresize(imgGray, [64 64]);
 
-    % Umbral de brillo para considerar una celda como vacía.
-    % En imágenes convertidas con im2double, 1.0 es blanco puro.
-    % El valor 0.9 se ha seleccionado empíricamente para las
-    % condiciones típicas de iluminación y puede ajustarse si es necesario.
-    umbralCeldaVacia = 0.9;
+    % Heurística de celda negra
+    if mean(imgGray(:)) < 0.1
+        resultado = struct('tipo', 'negra', 'valor', '#', 'puntuacion', 1);
+        return;
+    end
 
-    nivelOscuro = mean(imagenGray(:));
-    if nivelOscuro > umbralCeldaVacia
+    % Binarización y ruido
+    umbral = graythresh(imgGray);
+    bin = imbinarize(imgGray, umbral * 0.8);
+    bin = imcomplement(bin);
+    bin = bwareaopen(bin, 10);
+
+    porcentajeActivos = nnz(bin) / numel(bin);
+    if porcentajeActivos < 0.02
         resultado = struct('tipo', 'vacio', 'valor', '', 'puntuacion', 0);
         return;
     end
 
-    if isempty(plantillasNumero)
-        [indiceNumero, puntNum] = clasificarNumero(imagenGray);
-    else
-        [indiceNumero, puntNum] = clasificarNumero(imagenGray, plantillasNumero);
-    end
+    % Intentar operador primero
+    [idxOp, puntOp, etiquetaOp] = clasificarOperador(imgGray, plantillasOperador);
+    [idxNum, puntNum, etiquetaNum] = clasificarNumero(imgGray, plantillasNumero);
 
-    if isempty(plantillasOperador)
-        [indiceOp, puntOp] = clasificarOperador(imagenGray);
-    else
-        [indiceOp, puntOp] = clasificarOperador(imagenGray, plantillasOperador);
-    end
-
-    maxNum = max(puntNum);
     maxOp = max(puntOp);
+    maxNum = max(puntNum);
 
-    if maxNum >= maxOp
-        mapa = {'1','2','3','4','5','6','7','8','9','0'};
-        valor = mapa{indiceNumero};
-        resultado = struct('tipo', 'numero', 'valor', valor, 'puntuacion', maxNum);
+    if maxOp >= maxNum
+        resultado = struct('tipo', 'operador', 'valor', etiquetaOp, 'puntuacion', maxOp);
     else
-        mapa = {'+','-','*','/','='};
-        valor = mapa{indiceOp};
-        resultado = struct('tipo', 'operador', 'valor', valor, 'puntuacion', maxOp);
+        resultado = struct('tipo', 'numero', 'valor', etiquetaNum, 'puntuacion', maxNum);
     end
 end

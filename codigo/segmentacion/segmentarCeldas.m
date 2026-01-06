@@ -1,77 +1,64 @@
 function celdas = segmentarCeldas(img, lineasFilas, lineasColumnas, offset)
-%SEGMENTARCELDAS Divide la cuadrícula en celdas.
+%SEGMENTARCELDAS Divide la cuadrícula en celdas y las normaliza a 64x64.
 %   celdas = segmentarCeldas(img, lineasFilas, lineasColumnas, offset)
+%   Si no se proporcionan líneas, se reparte de forma uniforme asumiendo
+%   cuadrícula cuadrada.
 
     if nargin < 4
-        offset = 3;
+        offset = 4;
     end
 
     gray = im2gray(img);
 
-    if nargin >= 3 && ~isempty(lineasFilas) && ~isempty(lineasColumnas)
+    if nargin < 3 || isempty(lineasFilas) || isempty(lineasColumnas)
+        N = 9;
+        lineasFilas = round(linspace(1, size(gray,1), N+1));
+        lineasColumnas = round(linspace(1, size(gray,2), N+1));
+    else
         lineasFilas = sort(lineasFilas);
         lineasColumnas = sort(lineasColumnas);
-        filas = numel(lineasFilas) - 1;
-        cols = numel(lineasColumnas) - 1;
-        celdas = cell(filas, cols);
-        warningIssued = false; % Flag para evitar advertencias duplicadas
-        for r = 1:filas
-            for c = 1:cols
-                % Calcular las dimensiones base de la celda
-                cellWidth = lineasColumnas(c+1) - lineasColumnas(c);
-                cellHeight = lineasFilas(r+1) - lineasFilas(r);
-
-                % Limitar el offset para que no exceda la mitad de la celda
-                maxOffsetX = floor((cellWidth - 1) / 2);
-                maxOffsetY = floor((cellHeight - 1) / 2);
-
-                effectiveOffsetX = min(offset, maxOffsetX);
-                effectiveOffsetY = min(offset, maxOffsetY);
-
-                % Avisar si el offset solicitado es demasiado grande (solo una vez)
-                if ~warningIssued && (effectiveOffsetX < offset || effectiveOffsetY < offset)
-                    warning('segmentarCeldas:OffsetTooLarge', ...
-                        'Offset solicitado (%g) excede la mitad del tamaño de celda en algunas celdas. Se ha reducido automáticamente.', ...
-                        offset);
-                    warningIssued = true;
-                end
-
-                x1 = lineasColumnas(c) + effectiveOffsetX;
-                x2 = lineasColumnas(c+1) - effectiveOffsetX;
-                y1 = lineasFilas(r) + effectiveOffsetY;
-                y2 = lineasFilas(r+1) - effectiveOffsetY;
-
-                w = max(x2 - x1, 1);
-                h = max(y2 - y1, 1);
-                rect = [x1, y1, w, h];
-                celdas{r, c} = imcrop(gray, rect);
-            end
-        end
-        return;
     end
 
-    bin = gray > 20;
-    bin = imcomplement(bin);
-    relleno = imfill(bin, 100000);
-    relleno = imcomplement(relleno);
-    relleno = imfill(relleno, 'holes');
+    filas = numel(lineasFilas) - 1;
+    cols = numel(lineasColumnas) - 1;
+    celdas = cell(filas, cols);
+    warningIssued = false;
 
-    [labeledImage, numLabels] = bwlabel(relleno);
-    celdas = cell(numLabels, 1);
-    stats = regionprops(labeledImage, 'BoundingBox');
-    for k = 1:numLabels
-        bb = stats(k).BoundingBox;
+    for r = 1:filas
+        for c = 1:cols
+            cellWidth = lineasColumnas(c+1) - lineasColumnas(c);
+            cellHeight = lineasFilas(r+1) - lineasFilas(r);
 
-        x = floor(bb(1)) + offset;
-        y = floor(bb(2)) + offset;
-        w = floor(bb(3)) - (offset * 2);
-        h = floor(bb(4)) - (offset * 2);
+            maxOffsetX = floor((cellWidth - 1) / 2);
+            maxOffsetY = floor((cellHeight - 1) / 2);
 
-        if w > 0 && h > 0
-            rect = [x, y, w, h];
-            celdas{k} = imcrop(gray, rect);
-        else
-            celdas{k} = [];
+            effectiveOffsetX = min(offset, maxOffsetX);
+            effectiveOffsetY = min(offset, maxOffsetY);
+
+            if ~warningIssued && (effectiveOffsetX < offset || effectiveOffsetY < offset)
+                warning('segmentarCeldas:OffsetTooLarge', ...
+                    'Offset solicitado (%g) excede la mitad del tamaño de celda en algunas celdas. Se ha reducido automáticamente.', ...
+                    offset);
+                warningIssued = true;
+            end
+
+            x1 = lineasColumnas(c) + effectiveOffsetX;
+            x2 = lineasColumnas(c+1) - effectiveOffsetX;
+            y1 = lineasFilas(r) + effectiveOffsetY;
+            y2 = lineasFilas(r+1) - effectiveOffsetY;
+
+            w = max(x2 - x1, 1);
+            h = max(y2 - y1, 1);
+            rect = [x1, y1, w, h];
+            recorte = imcrop(gray, rect);
+
+            if isempty(recorte)
+                celdas{r, c} = [];
+                continue;
+            end
+
+            recorte = imresize(recorte, [64 64], 'nearest');
+            celdas{r, c} = recorte;
         end
     end
 end
