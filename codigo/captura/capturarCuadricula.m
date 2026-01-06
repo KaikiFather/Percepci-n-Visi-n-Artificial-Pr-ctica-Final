@@ -1,24 +1,24 @@
 function [imagen, origen] = capturarCuadricula(entrada)
 %CAPTURARCUADRICULA Carga una imagen desde archivo o webcam.
 %   [imagen, origen] = capturarCuadricula(entrada)
-%   - entrada puede ser una ruta de archivo, una matriz de imagen o vacío.
-%   - si se omite, se intenta abrir la webcam; si falla, se permite elegir un archivo.
+%   - entrada puede ser una ruta de archivo, una matriz de imagen o [].
+%   - Si se pasa [] (o se omite), intenta webcam; si falla, abre selector de archivo.
 %
-%   La prioridad es: argumento directo > webcam disponible > selector de archivo.
+%   Prioridad: imagen directa > ruta > webcam > selector.
 
     if nargin < 1
         entrada = [];
     end
 
-    % Caso: ya se pasa la imagen como matriz
-    if isnumeric(entrada)
+    % 1) Si ya viene como matriz de imagen
+    if isnumeric(entrada) && ~isempty(entrada)
         imagen = entrada;
         origen = 'matriz';
         return;
     end
 
-    % Caso: se pasa una ruta
-    if ischar(entrada) || isstring(entrada)
+    % 2) Si viene como ruta
+    if (ischar(entrada) || isstring(entrada)) && ~isempty(strtrim(string(entrada)))
         ruta = char(entrada);
         if ~isfile(ruta)
             error('No se encontró el archivo de imagen: %s', ruta);
@@ -28,7 +28,7 @@ function [imagen, origen] = capturarCuadricula(entrada)
         return;
     end
 
-    % Si no hay entrada, intentar webcam y luego selector
+    % 3) Si no hay entrada: webcam o selector
     if isempty(entrada)
         [imagen, origen] = capturarDesdeWebcam();
         if isempty(imagen)
@@ -49,21 +49,33 @@ end
 function [imagen, origen] = capturarDesdeWebcam()
     imagen = [];
     origen = '';
-    if exist('webcam', 'class') ~= 8 %#ok<EXIST>
+
+    % En MATLAB suele existir como función (file), no como class.
+    if exist('webcam', 'file') ~= 2 %#ok<EXIST>
         return;
     end
 
     try
+        % Si hay varias cámaras, esto ayuda a detectar disponibilidad
+        if exist('webcamlist', 'file') == 2 %#ok<EXIST>
+            cams = webcamlist;
+            if isempty(cams)
+                return;
+            end
+        end
+
         cam = webcam;
         pause(0.2);
         imagen = snapshot(cam);
         origen = 'webcam';
         clear cam;
+
     catch ME
         warning('No se pudo acceder a la webcam: %s', ME.message);
         if exist('cam', 'var')
             clear cam;
         end
         imagen = [];
+        origen = '';
     end
 end

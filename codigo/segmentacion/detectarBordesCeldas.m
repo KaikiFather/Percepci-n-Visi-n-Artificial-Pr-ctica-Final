@@ -1,72 +1,81 @@
-function [lineasFilas, lineasColumnas, proyFilas, proyColumnas] = detectarBordesCeldas(img, N)
-%DETECTARBORDESCELDAS Estima las líneas de la cuadrícula por proyección.
-%   [lineasFilas, lineasColumnas] = detectarBordesCeldas(img, N)
-%   Usa la proyección de bordes para localizar picos. Si falla, reparte
-%   uniformemente con N si se proporciona o con 9 por defecto.
+function [lineasFilas, lineasColumnas] = detectarBordesCeldas(tabImgWarp, N)
+%DETECTARBORDESCELDAS Detecta líneas de rejilla por proyección.
+%   Si no detecta suficiente, fallback uniforme usando N.
 
-    if nargin < 2 || isempty(N)
+    if nargin < 1 || isempty(tabImgWarp)
+        error('detectarBordesCeldas: tabImgWarp vacío.');
+    end
+    if nargin < 2
         N = [];
     end
 
-    gray = im2gray(img);
-    edges = edge(gray, 'Canny');
-    proyFilas = sum(edges, 2);
-    proyColumnas = sum(edges, 1);
+    tabGray = im2gray(tabImgWarp);
 
-    lineasFilas = extraerLineas(proyFilas, 0.45);
-    lineasColumnas = extraerLineas(proyColumnas, 0.45);
+    bin = imbinarize(tabGray, 'adaptive', 'ForegroundPolarity','dark', 'Sensitivity', 0.55);
+    bin = imcomplement(bin);
+    bin = bwareaopen(bin, 120);
+    bin = imdilate(bin, strel('square', 2));
 
+    proyFilas = sum(bin,2);
+    proyCols  = sum(bin,1);
+
+    lineasFilas = extraerPicos(proyFilas);
+    lineasColumnas = extraerPicos(proyCols);
+
+    % Fallback uniforme
     if numel(lineasFilas) < 2 || numel(lineasColumnas) < 2
-        if isempty(N)
-            N = 9;
+        if isempty(N) || ~isscalar(N) || N < 5 || N > 12
+            N = 5; % para no romper
         end
-        alto = size(gray, 1);
-        ancho = size(gray, 2);
-        lineasFilas = round(linspace(1, alto, N + 1));
-        lineasColumnas = round(linspace(1, ancho, N + 1));
+        H = size(tabGray,1);
+        W = size(tabGray,2);
+        lineasFilas = round(linspace(1, H, N+1));
+        lineasColumnas = round(linspace(1, W, N+1));
     end
 
-    lineasFilas = unique(lineasFilas);
-    lineasColumnas = unique(lineasColumnas);
+    lineasFilas = sort(unique(lineasFilas(:)));
+    lineasColumnas = sort(unique(lineasColumnas(:)));
 end
 
-function lineas = extraerLineas(proyeccion, umbralRelativo)
-    if nargin < 2
-        umbralRelativo = 0.5;
-    end
-    proyeccion = proyeccion(:);
-    if max(proyeccion) == 0
-        lineas = [];
-        return;
+function picos = extraerPicos(proy)
+    proy = proy(:);
+    if isempty(proy), picos = []; return; end
+
+    suav = movmean(proy, 9);
+    umbral = 0.55 * (max(suav) + eps);
+
+    idx = find(suav > umbral);
+    if isempty(idx), picos = []; return; end
+
+    grupos = separarEnGrupos(idx);
+    picos = zeros(numel(grupos),1);
+    for k=1:numel(grupos)
+        g = grupos{k};
+        [~,pos] = max(proy(g));
+        picos(k) = g(pos);
     end
 
-    suavizado = movmean(proyeccion, 5);
-    umbral = max(suavizado) * umbralRelativo;
-    indices = find(suavizado > umbral);
-    if isempty(indices)
-        lineas = [];
-        return;
-    end
+    picos = sort(unique(picos));
 
-    grupos = separarEnGrupos(indices);
-    lineas = zeros(numel(grupos), 1);
-    for k = 1:numel(grupos)
-        lineas(k) = round(mean(grupos{k}));
+    minDist = 12;
+    out = [];
+    for i=1:numel(picos)
+        if isempty(out) || abs(picos(i)-out(end)) >= minDist
+            out(end+1) = picos(i); %#ok<AGROW>
+        end
     end
+    picos = out(:);
 end
 
-function grupos = separarEnGrupos(indices)
+function grupos = separarEnGrupos(idx)
     grupos = {};
-    if isempty(indices)
-        return;
-    end
-
-    inicio = indices(1);
-    for k = 2:numel(indices)
-        if indices(k) ~= indices(k-1) + 1
-            grupos{end+1} = inicio:indices(k-1); %#ok<AGROW>
-            inicio = indices(k);
+    if isempty(idx), return; end
+    inicio = idx(1);
+    for k=2:numel(idx)
+        if idx(k) ~= idx(k-1)+1
+            grupos{end+1} = inicio:idx(k-1); %#ok<AGROW>
+            inicio = idx(k);
         end
     end
-    grupos{end+1} = inicio:indices(end);
+    grupos{end+1} = inicio:idx(end);
 end
