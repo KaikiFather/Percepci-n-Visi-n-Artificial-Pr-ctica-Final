@@ -6,8 +6,9 @@
 
 1. [Requerimientos oficiales](#1-requerimientos-oficiales)  
 2. [Estructura del repositorio](#2-estructura-del-repositorio)  
-3. [Planificación resumida](#3-planificación-resumida)  
-4. [Explicación de carpetas y archivos](#4-explicación-de-carpetas-y-archivos)
+3. [Requisitos para la entrada por voz (HMM de dígitos)](#3-requisitos-para-la-entrada-por-voz-hmm-de-dígitos)  
+4. [Planificación resumida](#4-planificación-resumida)  
+5. [Explicación de carpetas y archivos](#5-explicación-de-carpetas-y-archivos)
 
 ---
 
@@ -82,6 +83,12 @@ Proyecto-CrossMath/
 │   ├── interaccion/                   # Entrada mediante voz o tarjetas
 │   │   ├── entradaVoz.m
 │   │   ├── entradaTarjetas.m
+│   │   ├── audio_hmm/                 # Reconocimiento por voz (dígitos con HMM)
+│   │   │   ├── calcular_delta.m
+│   │   │   ├── cuantizar_caracteristicas.m
+│   │   │   ├── deteccion_extremos_energia.m
+│   │   │   ├── extraer_caracteristicas_senal.m
+│   │   │   └── reconocedor_digito_microfono.m
 │   │   └── plantillas_tarjetas/
 │   │
 │   ├── logica/                        # Lógica del juego y validación
@@ -93,6 +100,10 @@ Proyecto-CrossMath/
 │   └── interfaz/                      # Interfaz gráfica del sistema
 │       ├── interfazPrincipal.m
 │       └── dibujarTablero.m
+│
+├── codigo/modelos_audio/              # Pesos y codebook entrenados para voz (no incluidos)
+│   ├── modelos.mat
+│   └── codebook.mat
 │
 ├── datos/                             # Imágenes para pruebas
 │   ├── originales/
@@ -116,7 +127,25 @@ Proyecto-CrossMath/
 
 ---
 
-## 3. Planificación resumida
+## 3. Requisitos para la entrada por voz (HMM de dígitos)
+
+La integración de voz reutiliza los modelos HMM entrenados para los dígitos 0‑9. Para que `entradaVoz.m` funcione es imprescindible disponer de los ficheros entrenados:
+
+- `codigo/modelos_audio/codebook.mat`
+- `codigo/modelos_audio/modelos.mat` (contiene `modelos`, `mejorK`, `mejorN`)
+
+Si no los tienes, ejecuta tu script de entrenamiento (por ejemplo, `principal_hmm_digitos.m`) con los siguientes parámetros, que son los que usa la ejecución en vivo:
+
+- `frecuenciaMuestreo = 8000`
+- `tamVentana = 240`
+- `desplazamiento = 120`
+- `numCoefMEL = 13`
+
+La tubería en producción realiza: grabación desde micro, detección de voz por energía, extracción de MFCC + delta + delta‑delta, cuantización con el codebook y puntuación de cada modelo HMM mediante `hmmdecode`. Los operadores no se reconocen por voz; deben introducirse con tarjetas.
+
+---
+
+## 4. Planificación resumida
 
 **Semana 1:** Captura de imagen, preprocesamiento y detección de cuadrícula.  
 **Semana 2:** Segmentación de celdas y reconocimiento de símbolos.  
@@ -127,7 +156,7 @@ Proyecto-CrossMath/
 
 ---
 
-## 4. Explicación de carpetas y archivos
+## 5. Explicación de carpetas y archivos
 
 **configuracion/**  
 Contiene parámetros de cámara, ajustes de OCR y configuraciones generales del sistema.
@@ -146,4 +175,3 @@ Cuadrículas de ejemplo usadas para validar el sistema.
 
 **video/**  
 Video demostrativo del funcionamiento completo.
-
