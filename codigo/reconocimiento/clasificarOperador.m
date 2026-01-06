@@ -1,28 +1,40 @@
-function [mejorIndice, puntuaciones] = clasificarOperador(imagen, plantillas)
-    if nargin < 2
-        plantillas = {
-            im2gray(imread('patrones/mas.png')) > 20,...
-            im2gray(imread('patrones/menos.png')) > 20,...
-            im2gray(imread('patrones/mul.png')) > 20,...
-            im2gray(imread('patrones/div.png')) > 20,...
-            im2gray(imread('patrones/igual.png')) > 20
-            };
+function [mejorIndice, puntuaciones, etiqueta] = clasificarOperador(imagen, plantillas, etiquetas)
+%CLASIFICAROPERADOR Template matching para operadores +-*/=
+
+    if nargin < 2 || isempty(plantillas)
+        [plantillas, etiquetas] = cargarPlantillasOperadores();
     end
+    if nargin < 3 || isempty(etiquetas)
+        etiquetas = {'+','-','*','/','='};
+    end
+
+    imagenPrep = prepararImagen(imagen);
+
     numPlantillas = length(plantillas);
     puntuaciones = zeros(numPlantillas, 1);
 
-    imagen = im2double(imagen);
-    
     for k = 1:numPlantillas
-        plantillaActual = im2double(plantillas{k});
+        plantillaActual = im2double(imresize(plantillas{k}, size(imagenPrep)));
         try
-            c = normxcorr2(plantillaActual, imagen);
+            c = normxcorr2(plantillaActual, imagenPrep);
             puntuaciones(k) = max(c(:));
-        catch ME
-            warning('Error comparando plantilla %d: %s', k, ME.message);
-            puntuaciones(k) = -Inf;
+        catch
+            puntuaciones(k) = corr2(plantillaActual, imagenPrep);
         end
     end
 
     [~, mejorIndice] = max(puntuaciones);
+    etiqueta = etiquetas{mejorIndice};
+end
+
+function imgBin = prepararImagen(img)
+    img = im2double(im2gray(img));
+    img = imresize(img, [64 64]);
+    img = imadjust(img);
+    umbral = graythresh(img);
+    imgBin = imbinarize(img, umbral * 0.8);
+    imgBin = imcomplement(imgBin);
+    imgBin = imclearborder(imgBin);
+    imgBin = bwareaopen(imgBin, 10);
+    imgBin = imgaussfilt(double(imgBin), 0.5);
 end

@@ -1,6 +1,6 @@
 function [esValido, mensaje] = validarMovimiento(tablero, movimiento)
 %VALIDARMOVIMIENTO Comprueba si un movimiento es válido en el tablero.
-%   tablero: struct con campo grid (cell array).
+%   tablero: struct con campos grid, tipos y fijas.
 %   movimiento: struct con fila, columna y valor.
 
     esValido = false;
@@ -11,7 +11,6 @@ function [esValido, mensaje] = validarMovimiento(tablero, movimiento)
         return;
     end
 
-    % Validar que movimiento tiene los campos requeridos
     if ~isfield(movimiento, 'fila') || ~isfield(movimiento, 'columna') || ~isfield(movimiento, 'valor')
         mensaje = 'El movimiento no tiene los campos requeridos (fila, columna, valor).';
         return;
@@ -26,16 +25,38 @@ function [esValido, mensaje] = validarMovimiento(tablero, movimiento)
         return;
     end
 
-    valor = movimiento.valor;
-    allowedChars = '0123456789+-*/=';
-    if isempty(valor) || ~all(ismember(valor, allowedChars))
-        mensaje = 'El valor solo puede contener números y los operadores +, -, *, /, =.';
+    valor = string(movimiento.valor);
+    if strlength(valor) == 0
+        mensaje = 'El valor no puede ser vacío.';
         return;
     end
 
-    celdaActual = tablero.grid{movimiento.fila, movimiento.columna};
-    if ~isempty(celdaActual) && ~strcmp(celdaActual, '')
-        mensaje = 'La celda ya contiene un valor.';
+    permitido = regexp(valor, '^[0-9]{1,2}$|^[+\-*/=]$');
+    if isempty(permitido)
+        mensaje = 'El valor debe ser un número (0-99) o un operador + - * / =.';
+        return;
+    end
+
+    % Comprobar coherencia con tipo detectado inicialmente
+    if isfield(tablero, 'tipos')
+        tipoInicial = tablero.tipos{movimiento.fila, movimiento.columna};
+        if strcmp(tipoInicial, 'negra')
+            mensaje = 'La celda es negra y no admite movimientos.';
+            return;
+        end
+        if strcmp(tipoInicial, 'operador') && all(isstrprop(valor, 'digit'))
+            mensaje = 'La celda es de operador y no admite números.';
+            return;
+        end
+        if strcmp(tipoInicial, 'numero') && ~all(isstrprop(valor, 'digit'))
+            mensaje = 'La celda es numérica y no admite operadores.';
+            return;
+        end
+    end
+
+    % No permitir sobreescribir casillas fijas
+    if isfield(tablero, 'fijas') && tablero.fijas(movimiento.fila, movimiento.columna)
+        mensaje = 'La celda es fija y no puede modificarse.';
         return;
     end
 

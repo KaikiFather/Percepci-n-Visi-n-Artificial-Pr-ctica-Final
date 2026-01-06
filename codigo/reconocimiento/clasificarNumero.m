@@ -1,33 +1,62 @@
-function [mejorIndice, puntuaciones] = clasificarNumero(imagen, plantillas)
-    if nargin < 2
-        plantillas = {
-            im2gray(imread('patrones/1.png')) > 20,...
-            im2gray(imread('patrones/2.png')) > 20,...
-            im2gray(imread('patrones/3.png')) > 20,...
-            im2gray(imread('patrones/4.png')) > 20,...
-            im2gray(imread('patrones/5.png')) > 20,...
-            im2gray(imread('patrones/6.png')) > 20,...
-            im2gray(imread('patrones/7.png')) > 20,...
-            im2gray(imread('patrones/8.png')) > 20,...
-            im2gray(imread('patrones/9.png')) > 20,...
-            im2gray(imread('patrones/0.png')) > 20
-            };
+function [mejorIndice, puntuaciones, etiqueta] = clasificarNumero(imagen, plantillas, etiquetas)
+%CLASIFICARNUMERO Realiza template matching para dígitos 0-9 y compuestos.
+%   [mejorIndice, puntuaciones, etiqueta] = clasificarNumero(imagen, plantillas, etiquetas)
+%   Si no se proporcionan plantillas, se generan automáticamente.
+
+    if nargin < 2 || isempty(plantillas)
+        [plantillas, etiquetas] = cargarPlantillasDigitos();
     end
+    if nargin < 3 || isempty(etiquetas)
+        etiquetas = arrayfun(@num2str, 0:numel(plantillas)-1, 'UniformOutput', false);
+    end
+
+    imagenPrep = prepararImagen(imagen);
+    comps = bwconncomp(imagenPrep > 0.3);
+
+    if comps.NumObjects >= 2
+        % Dos componentes => intentar dos dígitos
+        bounding = regionprops(comps, 'BoundingBox');
+        [~, orden] = sort(arrayfun(@(b) b.BoundingBox(1), bounding));
+        recortes = cell(1,2);
+        for k = 1:min(2, numel(orden))
+            bb = bounding(orden(k)).BoundingBox;
+            recortes{k} = imcrop(imagenPrep, bb);
+            recortes{k} = imresize(recortes{k}, [64 64]);
+        end
+        etiquetasRec = cell(1, numel(recortes));
+        for k = 1:numel(recortes)
+            [~, ~, etiquetasRec{k}] = clasificarNumero(recortes{k}, plantillas, etiquetas); %#ok<AGROW>
+        end
+        etiqueta = strjoin(etiquetasRec, '');
+        mejorIndice = 1;
+        puntuaciones = ones(numel(plantillas), 1); % marcador
+        return;
+    end
+
     numPlantillas = length(plantillas);
     puntuaciones = zeros(numPlantillas, 1);
-
-    imagen = im2double(imagen);
-    
     for k = 1:numPlantillas
-        plantillaActual = im2double(plantillas{k});
+        plantillaActual = im2double(imresize(plantillas{k}, size(imagenPrep)));
         try
-            c = normxcorr2(plantillaActual, imagen);
+            c = normxcorr2(plantillaActual, imagenPrep);
             puntuaciones(k) = max(c(:));
-        catch ME
-            warning('Error comparando plantilla %d: %s', k, ME.message);
-            puntuaciones(k) = -Inf;
+        catch
+            puntuaciones(k) = corr2(plantillaActual, imagenPrep);
         end
     end
 
     [~, mejorIndice] = max(puntuaciones);
+    etiqueta = etiquetas{mejorIndice};
+end
+
+function imgBin = prepararImagen(img)
+    img = im2double(im2gray(img));
+    img = imresize(img, [64 64]);
+    img = imadjust(img);
+    umbral = graythresh(img);
+    imgBin = imbinarize(img, umbral * 0.8);
+    imgBin = imcomplement(imgBin);
+    imgBin = imclearborder(imgBin);
+    imgBin = bwareaopen(imgBin, 15);
+    imgBin = imgaussfilt(double(imgBin), 0.5);
 end

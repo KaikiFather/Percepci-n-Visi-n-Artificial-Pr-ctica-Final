@@ -8,7 +8,9 @@
 2. [Estructura del repositorio](#2-estructura-del-repositorio)  
 3. [Requisitos para la entrada por voz (HMM de dígitos)](#3-requisitos-para-la-entrada-por-voz-hmm-de-dígitos)  
 4. [Planificación resumida](#4-planificación-resumida)  
-5. [Explicación de carpetas y archivos](#5-explicación-de-carpetas-y-archivos)
+5. [Explicación de carpetas y archivos](#5-explicación-de-carpetas-y-archivos)  
+6. [Cómo ejecutar la demo](#6-cómo-ejecutar-la-demo)  
+7. [Limitaciones actuales](#7-limitaciones-actuales)
 
 ---
 
@@ -175,3 +177,29 @@ Cuadrículas de ejemplo usadas para validar el sistema.
 
 **video/**  
 Video demostrativo del funcionamiento completo.
+
+---
+
+## 6. Cómo ejecutar la demo
+
+1. Abre MATLAB en la raíz del proyecto y ejecuta `addpath(genpath('codigo'))` si no usas `ejecutar.m`.  
+2. Lanza `ejecutar` desde la consola de MATLAB.  
+3. Cuando se pida una ruta puedes pulsar Enter para usar la webcam (si está disponible) o se cargará `ejemplo_5x5.jpg` por defecto.  
+4. El sistema detectará y rectificará la cuadrícula, segmentará las celdas y mostrará un tablero con los valores detectados.  
+5. Opciones en consola:  
+   - `v`: introducir valores por voz (requiere `modelos.mat` y `codebook.mat`).  
+   - `t`: introducir valores por tarjetas/teclado (fallback manual).  
+   - `c`: comprobar la solución y resaltar filas/columnas erróneas.  
+   - `s`: salir.  
+6. Scripts de prueba rápida en `tests/`:  
+   - `tests/test_pipeline_imagen.m`  
+   - `tests/test_segmentacion_visual.m`
+
+---
+
+## 7. Limitaciones actuales
+
+- Los modelos de voz (`modelos.mat` y `codebook.mat`) no se incluyen; se necesitan para reconocimiento por micro.  
+- El reconocimiento visual usa plantillas generadas programáticamente; es suficiente para la demo pero no sustituye a un entrenamiento específico.  
+- La detección de cuadrícula está calibrada para tamaños 5–12; imágenes con mucha perspectiva o ruido pueden requerir ajustes de umbral.  
+- No se incluyen plantillas físicas adicionales de tarjetas más allá de las básicas generadas desde el código.
